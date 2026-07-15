@@ -1,0 +1,17 @@
+name: rete
+version: 0.1.0
+
+authors:
+  - koffee.zip <koffeejava@tuta.io>
+
+targets:
+  rete:
+    main: src/rete.cr
+
+dependencies:
+  validator:
+    github: nicolab/crystal-validator
+
+crystal: '>= 1.20.3'
+
+license: GPL

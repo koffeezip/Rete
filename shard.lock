@@ -1,0 +1,10 @@
+version: 2.0
+shards:
+  prop:
+    git: https://github.com/nicolab/crystal-prop.git
+    version: 0.7.1
+
+  validator:
+    git: https://github.com/nicolab/crystal-validator.git
+    version: 1.11.0
+
