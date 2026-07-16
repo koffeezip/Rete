@@ -93,32 +93,53 @@ end
 repeat = 0
 working = 0
 notWorking = 0
-config = File.read("config.txt")
+exist = true
 
- while repeat < ARGV.size
-    if Valid.url? ARGV[repeat]
-      begin
-        response = HTTP::Client.get(ARGV[repeat])
-        if config.includes?(response.status_code.to_s)
-          puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
-          working += 1
-        else
-          puts "#{ARGV[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
-          notWorking += 1
-        end
-      rescue Socket::Addrinfo::Error
-        puts "#{ARGV[repeat]} is a valid URL but does not exist."
-        notWorking += 1
-      end
-    else
-      puts "#{ARGV[repeat]} is not a valid URL"
-      notWorking += 1
-    end
-    repeat += 1
+begin
+  config = File.read("config.txt")
+rescue File::NotFoundError
+  puts "Oh No! It seems that your config.txt file does not exist!"
+  puts "This is required for rete to know what classifies if a url is working or not!"
+  puts "You can fix this by creating a config.txt file and by then entering status codes you classify as \"working\""
+  exit(1)
+end
+
+while repeat < ARGV.size
+  begin
+    validUrl = Valid.url? ARGV[repeat]
+  rescue Regex::Error
+    validUrl = false
   end
 
-  puts "=============================="
-  puts "Finished testing urls."
-  puts "A total of #{repeat} url(s) were tested."
-  puts "#{working}/#{repeat} url(s) were working."
-  puts "#{notWorking}/#{repeat} url(s) were not working."
+  if validUrl == true
+    begin
+      STDIN.read_timeout = 1
+      uri = URI.parse(ARGV[repeat])
+      client = HTTP::Client.new(uri)
+      client.connect_timeout = urlTimeout.to_i.seconds
+
+      response = client.get("/")
+      if config.includes?(response.status_code.to_s)
+        puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+        working += 1
+      else
+        puts "#{ARGV[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
+        notWorking += 1
+      end
+    rescue
+      puts "#{ARGV[repeat]} is a valid URL but does not exist."
+      notWorking += 1
+   end
+  else
+    puts "#{ARGV[repeat]} is not a valid URL"
+    notWorking += 1
+  end
+  repeat += 1
+end
+  
+puts "=============================="
+puts "Finished testing urls."
+puts "A total of #{repeat} url(s) were tested."
+puts "#{working}/#{repeat} url(s) were working."
+puts "#{notWorking}/#{repeat} url(s) were not working."
+exit 0
