@@ -2,15 +2,19 @@ require "option_parser"
 require "http/client"
 require "validator"
 
+output = "passed.txt"
+
 OptionParser.parse do |parser|
   parser.banner = "Usage: rete [arguments] [urls]"
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
-  checkUrlFromFile urls
+  checkUrlFromFile urls, output
   exit 0}
   parser.on("-v", "--version", "Displays current version of rete.") {
   puts "Rete 1.0 by koffee.zip"
   exit(0)}
+  parser.on("-o FILENAME", "--output=FILENAME", "Sets teh name of the outputted file. -f flag required") {|filename|
+  output = filename}
   parser.on("-h", "--help", "Show this help") do
     puts parser
     exit
@@ -22,7 +26,7 @@ OptionParser.parse do |parser|
   end
 end
 
-def checkUrlFromFile(content) # Sorry for the crappy method name.
+def checkUrlFromFile(content, output) # Sorry for the crappy method name.
   repeat = 0
   working = 0
   notWorking = 0
@@ -50,6 +54,9 @@ def checkUrlFromFile(content) # Sorry for the crappy method name.
         response = client.get("/")
         if config.includes?(response.status_code.to_s)
           puts "#{urls[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+          File.open("#{output}", "a") do |file|
+            file.puts urls[repeat]
+          end
           working += 1
         else
           puts "#{urls[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
