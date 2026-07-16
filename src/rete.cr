@@ -47,6 +47,7 @@ OptionParser.parse do |parser|
   urls = File.read(file)
   checkUrlFromFile urls
   exit 0}
+  parser.on("-v", "--version", "Displays current version of rete.") {puts "Rete 1.0 by koffee.zip"}
   parser.on("-h", "--help", "Show this help") do
     puts parser
     exit
