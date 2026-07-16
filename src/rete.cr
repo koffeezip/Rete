@@ -3,18 +3,21 @@ require "http/client"
 require "validator"
 
 output = "passed.txt"
+urlTimeout = 1
 
 OptionParser.parse do |parser|
-  parser.banner = "Usage: rete [arguments] [urls/file]"
+  parser.banner = "Usage: rete [arguments] [file/urls]"
+  parser.on("-t TIMEOUT", "--timeout=TIMEOUT", "Sets how many seconds until rete declares a timeout") {|timeout|
+  urlTimeout = timeout}
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
-  checkUrlFromFile urls, output
+  checkUrlFromFile urls, output, urlTimeout.to_i
   exit 0}
+  parser.on("-o FILENAME", "--output=FILENAME", "Sets the name of the outputted file. -f flag required") {|filename|
+  output = filename}
   parser.on("-v", "--version", "Displays current version of rete.") {
   puts "Rete 1.0 by koffee.zip"
   exit(0)}
-  parser.on("-o FILENAME", "--output=FILENAME", "Sets teh name of the outputted file. -f flag required") {|filename|
-  output = filename}
   parser.on("-h", "--help", "Show this help") do
     puts parser
     exit
@@ -26,12 +29,20 @@ OptionParser.parse do |parser|
   end
 end
 
-def checkUrlFromFile(content, output) # Sorry for the crappy method name.
+def checkUrlFromFile(content, output, urlTimeout) # Sorry for the crappy method name.
   repeat = 0
   working = 0
   notWorking = 0
   exist = true
-  config = File.read("config.txt")
+
+  begin
+    config = File.read("config.txt")
+  rescue File::NotFoundError
+    puts "Oh No! It seems that your config.txt file does not exist!"
+    puts "This is required for rete to know what classifies if a url is working or not!"
+    puts "You can fix this by creating a config.txt file and by then entering status codes you classify as \"working\""
+    exit(1)
+  end
 
   urls = content.split("\n")
 
@@ -47,9 +58,7 @@ def checkUrlFromFile(content, output) # Sorry for the crappy method name.
         STDIN.read_timeout = 1
         uri = URI.parse(urls[repeat])
         client = HTTP::Client.new(uri)
-        client.connect_timeout = 5.seconds
-        client.read_timeout = 10.seconds
-        client.write_timeout = 5.seconds
+        client.connect_timeout = urlTimeout.seconds
 
         response = client.get("/")
         if config.includes?(response.status_code.to_s)
