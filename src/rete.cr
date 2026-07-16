@@ -5,7 +5,7 @@ require "validator"
 output = "passed.txt"
 
 OptionParser.parse do |parser|
-  parser.banner = "Usage: rete [arguments] [urls]"
+  parser.banner = "Usage: rete [arguments] [urls/file]"
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
   checkUrlFromFile urls, output
