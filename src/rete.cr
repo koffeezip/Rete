@@ -16,7 +16,7 @@ OptionParser.parse do |parser|
   parser.on("-o FILENAME", "--output=FILENAME", "Sets the name of the outputted file. -f flag required") {|filename|
   output = filename}
   parser.on("-v", "--version", "Displays current version of rete.") {
-  puts "Rete 1.0 by koffee.zip"
+  puts "Rete 1.1 by koffee.zip"
   exit(0)}
   parser.on("-h", "--help", "Show this help") do
     puts parser
