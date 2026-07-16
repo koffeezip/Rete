@@ -63,22 +63,27 @@ working = 0
 notWorking = 0
 config = File.read("config.txt")
 
-while repeat < ARGV.size
-  if Valid.url? ARGV[repeat]
-    response = HTTP::Client.get(ARGV[repeat])
-    if config.includes?(response.status_code.to_s)
-      puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
-      working += 1
+ while repeat < ARGV.size
+    if Valid.url? ARGV[repeat]
+      begin
+        response = HTTP::Client.get(ARGV[repeat])
+        if config.includes?(response.status_code.to_s)
+          puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+          working += 1
+        else
+          puts "#{ARGV[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
+          notWorking += 1
+        end
+      rescue Socket::Addrinfo::Error
+        puts "#{ARGV[repeat]} is a valid URL but does not exist."
+        notWorking += 1
+      end
     else
-      puts "#{ARGV[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
+      puts "#{ARGV[repeat]} is not a valid URL"
       notWorking += 1
     end
-  elsif
-    puts "#{ARGV[repeat]} is not a valid URL"
-    notWorking += 1
+    repeat += 1
   end
-repeat += 1
-end
 
   puts "=============================="
   puts "Finished testing urls."
