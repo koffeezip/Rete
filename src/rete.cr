@@ -4,25 +4,27 @@ require "validator"
 
 output = "passed.txt"
 urlTimeout = 1
-includes = "hafjdhfkjlhadhlahfhl"
+includes = ""
 includesFlag = false
+debug = false
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: rete [arguments] [file/urls]"
   parser.on("-i STRING", "--includes=STRING", "Checks to see if a successful response") {|string|
   includes = string
-includesFlag = true}
+  includesFlag = true}
   parser.on("-t TIMEOUT", "--timeout=TIMEOUT", "Sets how many seconds until rete declares a timeout") {|timeout|
   urlTimeout = timeout}
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
-  checkUrlFromFile urls, output, urlTimeout.to_i
+  checkUrlFromFile urls, output, urlTimeout.to_i, includesFlag, includes
   exit 0}
   parser.on("-o FILENAME", "--output=FILENAME", "Sets the name of the outputted file. -f flag required") {|filename|
   output = filename}
   parser.on("-v", "--version", "Displays current version of rete.") {
   puts "Rete 1.1 by koffee.zip"
   exit(0)}
+  parser.on("-d", "--debug", "Debug Mode") {debug = true}
   parser.on("-h", "--help", "Show this help") do
     puts parser
     exit
@@ -34,7 +36,7 @@ includesFlag = true}
   end
 end
 
-def checkUrlFromFile(content, output, urlTimeout) # Sorry for the crappy method name.
+def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes) # Sorry for the crappy method name.
   repeat = 0
   working = 0
   notWorking = 0
@@ -60,7 +62,6 @@ def checkUrlFromFile(content, output, urlTimeout) # Sorry for the crappy method 
 
     if validUrl == true
       begin
-        STDIN.read_timeout = 1
         uri = URI.parse(urls[repeat])
         client = HTTP::Client.new(uri)
         client.connect_timeout = urlTimeout.seconds
@@ -82,7 +83,6 @@ def checkUrlFromFile(content, output, urlTimeout) # Sorry for the crappy method 
             file.puts urls[repeat]
           end
         end
-          working += 1
         else
           puts "#{urls[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
           notWorking += 1
@@ -129,13 +129,11 @@ while repeat < ARGV.size
 
   if validUrl == true
     begin
-      STDIN.read_timeout = 1
       uri = URI.parse(ARGV[repeat])
       client = HTTP::Client.new(uri)
       client.connect_timeout = urlTimeout.to_i.seconds
 
       response = client.get("/")
-      puts response.body.lines.first
       if config.includes?(response.status_code.to_s)
         if includesFlag
           if response.body.lines.first.includes?(includes)
