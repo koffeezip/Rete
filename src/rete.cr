@@ -77,8 +77,15 @@ def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug)
 
         response = client.get("/")
         if config.includes?(response.status_code.to_s)
+          if debug == true
+            puts "=============================="
+            puts "First line of Response from URL:"
+            puts response.body.lines.first
+            puts "=============================="
+          end
+
           if includesFlag
-          if response.body.lines.includes?(includes)
+          if response.body.includes?(includes)
             puts "#{urls[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
             File.open("#{output}", "a") do |file|
               file.puts urls[repeat]
@@ -158,7 +165,7 @@ while repeat < ARGV.size
         end
 
         if includesFlag
-          if response.body.lines.includes?(includes)
+          if response.body.includes?(includes)
             puts "#{ARGV[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
           else
             puts "#{ARGV[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
