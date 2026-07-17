@@ -4,9 +4,14 @@ require "validator"
 
 output = "passed.txt"
 urlTimeout = 1
+includes = "hafjdhfkjlhadhlahfhl"
+includesFlag = false
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: rete [arguments] [file/urls]"
+  parser.on("-i STRING", "--includes=STRING", "Checks to see if a successful response") {|string|
+  includes = string
+includesFlag = true}
   parser.on("-t TIMEOUT", "--timeout=TIMEOUT", "Sets how many seconds until rete declares a timeout") {|timeout|
   urlTimeout = timeout}
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
@@ -62,10 +67,21 @@ def checkUrlFromFile(content, output, urlTimeout) # Sorry for the crappy method 
 
         response = client.get("/")
         if config.includes?(response.status_code.to_s)
+          if includesFlag
+          if response.body.lines.first.includes?(includes)
+            puts "#{urls[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
+            File.open("#{output}", "a") do |file|
+              file.puts urls[repeat]
+            end
+          else
+            puts "#{urls[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
+          end
+        else
           puts "#{urls[repeat]} is a valid URL and works. Status code: #{response.status_code}"
           File.open("#{output}", "a") do |file|
             file.puts urls[repeat]
           end
+        end
           working += 1
         else
           puts "#{urls[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
@@ -119,8 +135,17 @@ while repeat < ARGV.size
       client.connect_timeout = urlTimeout.to_i.seconds
 
       response = client.get("/")
+      puts response.body.lines.first
       if config.includes?(response.status_code.to_s)
-        puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+        if includesFlag
+          if response.body.lines.first.includes?(includes)
+            puts "#{ARGV[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
+          else
+            puts "#{ARGV[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
+          end
+        else
+          puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+        end
         working += 1
       else
         puts "#{ARGV[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
