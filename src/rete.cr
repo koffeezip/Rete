@@ -17,14 +17,17 @@ OptionParser.parse do |parser|
   urlTimeout = timeout}
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
-  checkUrlFromFile urls, output, urlTimeout.to_i, includesFlag, includes
+  checkUrlFromFile urls, output, urlTimeout.to_i, includesFlag, includes, debug
   exit 0}
   parser.on("-o FILENAME", "--output=FILENAME", "Sets the name of the outputted file. -f flag required") {|filename|
   output = filename}
   parser.on("-v", "--version", "Displays current version of rete.") {
   puts "Rete 1.1 by koffee.zip"
   exit(0)}
-  parser.on("-d", "--debug", "Debug Mode") {debug = true}
+  parser.on("-d", "--debug", "Debug Mode") do
+    debug = true
+    puts "Debug mode enabled!"
+  end
   parser.on("-h", "--help", "Show this help") do
     puts parser
     exit
@@ -36,7 +39,7 @@ OptionParser.parse do |parser|
   end
 end
 
-def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes) # Sorry for the crappy method name.
+def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug) # Sorry for the crappy method name.
   repeat = 0
   working = 0
   notWorking = 0
@@ -44,6 +47,12 @@ def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes) # Sorr
 
   begin
     config = File.read("config.txt")
+    if debug == true
+      puts "=============================="
+      puts "Current Config:"
+      puts config
+      puts "=============================="
+    end
   rescue File::NotFoundError
     puts "Oh No! It seems that your config.txt file does not exist!"
     puts "This is required for rete to know what classifies if a url is working or not!"
@@ -69,7 +78,7 @@ def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes) # Sorr
         response = client.get("/")
         if config.includes?(response.status_code.to_s)
           if includesFlag
-          if response.body.lines.first.includes?(includes)
+          if response.body.lines.includes?(includes)
             puts "#{urls[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
             File.open("#{output}", "a") do |file|
               file.puts urls[repeat]
@@ -113,6 +122,12 @@ exist = true
 
 begin
   config = File.read("config.txt")
+  if debug == true
+    puts "=============================="
+    puts "Current Config:"
+    puts config
+    puts "=============================="
+  end
 rescue File::NotFoundError
   puts "Oh No! It seems that your config.txt file does not exist!"
   puts "This is required for rete to know what classifies if a url is working or not!"
@@ -135,8 +150,15 @@ while repeat < ARGV.size
 
       response = client.get("/")
       if config.includes?(response.status_code.to_s)
+        if debug == true
+          puts "=============================="
+          puts "First line of Response from URL:"
+          puts response.body.lines.first
+          puts "=============================="
+        end
+
         if includesFlag
-          if response.body.lines.first.includes?(includes)
+          if response.body.lines.includes?(includes)
             puts "#{ARGV[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
           else
             puts "#{ARGV[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
