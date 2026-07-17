@@ -7,6 +7,7 @@ urlTimeout = 1
 includes = ""
 includesFlag = false
 debug = false
+quiet = false
 
 OptionParser.parse do |parser|
   parser.banner = "Usage: rete [arguments] [file/urls]"
@@ -17,13 +18,16 @@ OptionParser.parse do |parser|
   urlTimeout = timeout}
   parser.on("-f FILE", "--file=FILE", "Checks all urls in a txt file.") { |file|
   urls = File.read(file)
-  checkUrlFromFile urls, output, urlTimeout.to_i, includesFlag, includes, debug
+  checkUrlFromFile urls, output, urlTimeout.to_i, includesFlag, includes, debug, quiet
   exit 0}
   parser.on("-o FILENAME", "--output=FILENAME", "Sets the name of the outputted file. -f flag required") {|filename|
   output = filename}
-  parser.on("-v", "--version", "Displays current version of rete.") {
+  parser.on("-v", "--version", "Displays current version of rete") {
   puts "Rete 1.1 by koffee.zip"
   exit(0)}
+  parser.on("-q", "--quiet", "Prints out less info") do
+    quiet = true
+  end
   parser.on("-d", "--debug", "Debug Mode") do
     debug = true
     puts "Debug mode enabled!"
@@ -39,7 +43,7 @@ OptionParser.parse do |parser|
   end
 end
 
-def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug) # Sorry for the crappy method name.
+def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug, quiet) # Sorry for the crappy method name.
   repeat = 0
   working = 0
   notWorking = 0
@@ -61,6 +65,10 @@ def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug)
   end
 
   urls = content.split("\n")
+
+  if quiet
+    print "\n"
+  end
 
   while repeat < urls.size
     begin
@@ -86,39 +94,58 @@ def checkUrlFromFile(content, output, urlTimeout, includesFlag, includes, debug)
 
           if includesFlag
           if response.body.includes?(includes)
-            puts "#{urls[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
+            if !quiet
+              puts "#{urls[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
+            end
             File.open("#{output}", "a") do |file|
               file.puts urls[repeat]
             end
+            working += 1
           else
-            puts "#{urls[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
+            if !quiet
+              puts "#{urls[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
+            end
+            notWorking += 1
           end
         else
-          puts "#{urls[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+          if !quiet
+            puts "#{urls[repeat]} is a valid URL and works. Status code: #{response.status_code}"
+          end
+          working += 1
           File.open("#{output}", "a") do |file|
             file.puts urls[repeat]
           end
         end
         else
-          puts "#{urls[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
+          if !quiet
+            puts "#{urls[repeat]} is a valid URL but does not work. Status Code: #{response.status_code}"
+          end
           notWorking += 1
         end
       rescue
-        puts "#{urls[repeat]} is a valid URL but does not exist."
+        if !quiet
+          puts "#{urls[repeat]} is a valid URL but does not exist."
+        end
         notWorking += 1
       end
     else
-      puts "#{urls[repeat]} is not a valid URL"
+      if !quiet
+        puts "#{urls[repeat]} is not a valid URL."
+      end
       notWorking += 1
+    end
+    if quiet
+      print "\e[1A"
+      puts "#{repeat + 1}/#{urls.size} urls are done."
     end
     repeat += 1
   end
   
   puts "=============================="
   puts "Finished testing urls."
-  puts "A total of #{repeat} url(s) were tested."
-  puts "#{working}/#{repeat} url(s) were working."
-  puts "#{notWorking}/#{repeat} url(s) were not working."
+  puts "A total of #{urls.size} url(s) were tested."
+  puts "#{working}/#{urls.size} url(s) were working."
+  puts "#{notWorking}/#{urls.size} url(s) were not working."
   exit 0
 end
 
@@ -167,8 +194,10 @@ while repeat < ARGV.size
         if includesFlag
           if response.body.includes?(includes)
             puts "#{ARGV[repeat]} is a valid URL, works and includes \"#{includes}\" Status code: #{response.status_code}"
+            working += 1
           else
             puts "#{ARGV[repeat]} is a valid URL, works but does not include \"#{includes}\" Status code: #{response.status_code}"
+            notWorking += 1
           end
         else
           puts "#{ARGV[repeat]} is a valid URL and works. Status code: #{response.status_code}"
